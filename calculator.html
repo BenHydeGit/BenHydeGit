@@ -5,74 +5,134 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Card Format Generator</title>
     <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --container-bg: white;
+            --text-color: #333;
+            --section-border: #ddd;
+            --input-bg: white;
+            --input-border: #ccc;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --table-border: #eee;
+            --label-color: #555;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --section-border: #333;
+            --input-bg: #2d2d2d;
+            --input-border: #444;
+            --button-bg: #3700b3;
+            --button-hover: #4a00e0;
+            --table-border: #333;
+            --label-color: #bbb;
+            --shadow: rgba(0,0,0,0.5);
+        }
+
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f4f4f4;
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
+
         .container {
             max-width: 600px;
             margin: auto;
-            background: white;
+            background: var(--container-bg);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px var(--shadow);
+            position: relative;
         }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--section-border);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         h2, h4 {
-            color: #333;
+            color: var(--text-color);
         }
+
         .section {
             margin-bottom: 20px;
             padding: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--section-border);
             border-radius: 4px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         .sizeinput {
             width: 100%;
             padding: 8px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--input-border);
             border-radius: 4px;
             box-sizing: border-box;
+            background-color: var(--input-bg);
+            color: var(--text-color);
         }
+
         .button {
-            background-color: #007bff;
+            background-color: var(--button-bg);
             color: white;
             padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            transition: background-color 0.3s;
         }
+
         .button:hover {
-            background-color: #0056b3;
+            background-color: var(--button-hover);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         td {
             padding: 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--table-border);
         }
+
         .result-label {
             font-weight: bold;
-            color: #555;
+            color: var(--label-color);
         }
+
         #lblFC, #lblCID, #lblFmtName, #lblCardRange, #lblFCRange {
-            color: red;
+            color: #ff5252;
             font-size: 14px;
         }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
 <div class="container">
+    <button class="theme-toggle" id="themeToggle">Switch to Dark Mode</button>
     <h2>Access Card Format Generator</h2>
 
     <div class="section">
@@ -91,7 +151,6 @@
 
         <input class="button" id="clickMe" type="button" value="Calculate" onclick="decodeCard(document.getElementById('txtHex').value);" />
 
-        <!-- Original labels used in some versions of the script -->
         <p id="lblFC"></p>
         <p id="lblCID"></p>
         <p id="lblFmtName"></p>
@@ -127,6 +186,22 @@
 </div>
 
 <script>
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+
+// Load preference
+const currentTheme = localStorage.getItem('theme') || 'light';
+body.setAttribute('data-theme', currentTheme);
+themeToggle.textContent = currentTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+
+themeToggle.addEventListener('click', () => {
+    const isDark = body.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    body.setAttribute('data-theme', newTheme);
+    themeToggle.textContent = newTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+    localStorage.setItem('theme', newTheme);
+});
+
 function decodeCard(hex) {
     var fc = "";
     var cardNum = "";
