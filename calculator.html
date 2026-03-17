@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Card Format Generator</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --container-bg: white;
+            --text-color: #333;
+            --section-border: #ddd;
+            --input-bg: white;
+            --input-border: #ccc;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --table-border: #eee;
+            --label-color: #555;
+            --shadow: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --section-border: #333;
+            --input-bg: #2d2d2d;
+            --input-border: #444;
+            --button-bg: #3700b3;
+            --button-hover: #4a00e0;
+            --table-border: #333;
+            --label-color: #bbb;
+            --shadow: rgba(0,0,0,0.5);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px var(--shadow);
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--section-border);
+            color: var(--text-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        h2, h4 {
+            color: var(--text-color);
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid var(--section-border);
+            border-radius: 4px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .sizeinput {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .button {
+            background-color: var(--button-bg);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        .result-label {
+            font-weight: bold;
+            color: var(--label-color);
+        }
+
+        #lblFC, #lblCID, #lblFmtName, #lblCardRange, #lblFCRange {
+            color: #ff5252;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+<div class="container">
+    <button class="theme-toggle" id="themeToggle">Switch to Dark Mode</button>
+    <h2>Access Card Format Generator</h2>
+
+    <div class="section">
+        <h4>Calculator</h4>
+        <label for="cmbBits">Select Bit Length:</label>
+        <select class="sizeinput" name="NoOfBits" id="cmbBits">
+            <option value="26">26</option>
+            <option value="34">34</option>
+            <option value="35">35</option>
+            <option value="37">37</option>
+            <option value="48">48</option>
+        </select>
+
+        <label for="txtHex">Input Hex Value:</label>
+        <input class="sizeinput" id="txtHex" name="txtHex" type="text" placeholder="e.g. 123456" />
+
+        <input class="button" id="clickMe" type="button" value="Calculate" onclick="decodeCard(document.getElementById('txtHex').value);" />
+
+        <p id="lblFC"></p>
+        <p id="lblCID"></p>
+        <p id="lblFmtName"></p>
+        <p id="lblCardRange"></p>
+        <p id="lblFCRange"></p>
+    </div>
+
+    <div class="section">
+        <h4>Results</h4>
+        <table>
+            <tr>
+                <td width="50%"><span class="result-label">Facility Code</span></td>
+                <td width="50%"><span id="fc1"></span></td>
+            </tr>
+            <tr>
+                <td><span class="result-label">Card Number</span></td>
+                <td><span id="cn1"></span></td>
+            </tr>
+            <tr>
+                <td><span class="result-label">Format Name</span></td>
+                <td><span id="fn1"></span></td>
+            </tr>
+            <tr>
+                <td><span class="result-label">Card Number Limit</span></td>
+                <td><span id="cnl"></span></td>
+            </tr>
+            <tr>
+                <td><span class="result-label">Facility Code Limit</span></td>
+                <td><span id="fcl"></span></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script>
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+
+// Load preference
+const currentTheme = localStorage.getItem('theme') || 'light';
+body.setAttribute('data-theme', currentTheme);
+themeToggle.textContent = currentTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+
+themeToggle.addEventListener('click', () => {
+    const isDark = body.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    body.setAttribute('data-theme', newTheme);
+    themeToggle.textContent = newTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+    localStorage.setItem('theme', newTheme);
+});
+
+function decodeCard(hex) {
+    var fc = "";
+    var cardNum = "";
+    var binValue = "";
+    var bits = document.getElementById('cmbBits').value;
+    var fmtName = "";
+    var cidRange = "";
+    var fcRange = "";
+
+    // Clear old results
+    document.getElementById("lblFC").innerHTML = '';
+    document.getElementById("lblCID").innerHTML = '';
+    document.getElementById("lblFmtName").innerHTML = '';
+    document.getElementById("lblCardRange").innerHTML = '';
+    document.getElementById("lblFCRange").innerHTML = '';
+
+    document.getElementById('fc1').innerHTML = '';
+    document.getElementById('cn1').innerHTML = '';
+    document.getElementById('fn1').innerHTML = '';
+    document.getElementById('cnl').innerHTML = '';
+    document.getElementById('fcl').innerHTML = '';
+
+    var regexp = /^[0-9a-fA-F]+$/;
+
+    if (!regexp.test(hex)) {
+        alert('Please enter a valid hexadecimal input');
+        return;
+    }
+
+    switch (bits) {
+        case '26':
+            var x = (parseInt(hex, 16).toString(2)).padStart(26, '0');
+            binValue = x.substr(x.length - 26);
+            fc = parseInt(binValue.substring(1, 9), 2);
+            cardNum = parseInt(binValue.substring(9, 25), 2);
+            fmtName = 'Standard 26 Bit';
+            fcRange = '0 ~ 255';
+            cidRange = '1 ~ 65535';
+            break;
+
+        case '34':
+            var x = (parseInt(hex, 16).toString(2)).padStart(34, '0');
+            binValue = x.substr(x.length - 34);
+            fc = parseInt(binValue.substring(1, 17), 2);
+            cardNum = parseInt(binValue.substring(17, 33), 2);
+            fmtName = 'Generic 34 Bit';
+            fcRange = '0 ~ 65535';
+            cidRange = '1 ~ 65535';
+            break;
+
+        case '35':
+            var x = (parseInt(hex, 16).toString(2)).padStart(35, '0');
+            binValue = x.substr(x.length - 35);
+            fc = parseInt(binValue.substring(2, 14), 2);
+            cardNum = parseInt(binValue.substring(14, 34), 2);
+            fmtName = 'HID Corporate 1000 (35 Bit)';
+            fcRange = '0 ~ 4095';
+            cidRange = '1 ~ 1048575';
+            break;
+
+        case '37':
+            var x = (parseInt(hex, 16).toString(2)).padStart(37, '0');
+            binValue = x.substr(x.length - 37);
+            fc = 'None (' + parseInt(binValue.substring(1, 17), 2) + ')';
+            cardNum = parseInt(binValue.substring(1, 36), 2) + ' (' + parseInt(binValue.substring(17, 36), 2) + ')';
+            fmtName = '37 Bit (or 37 Bit with Facility Code)';
+            fcRange = 'None (0~65535)';
+            cidRange = '1 ~ 34359738367 (1 ~ 524287)';
+            break;
+
+        case '48':
+            var x = (parseInt(hex, 16).toString(2)).padStart(48, '0');
+            binValue = x.substr(x.length - 48);
+            fc = parseInt(binValue.substring(2, 24), 2);
+            cardNum = parseInt(binValue.substring(24, 47), 2);
+            fmtName = 'HID Corporate 1000 (48 Bit)';
+            fcRange = '0 ~ 4194303';
+            cidRange = '1 ~ 8388607';
+            break;
+
+        default:
+            alert('Invalid bit length');
+            break;
+    }
+
+    document.getElementById('fc1').innerHTML = fc;
+    document.getElementById('cn1').innerHTML = cardNum;
+    document.getElementById('fn1').innerHTML = fmtName;
+    document.getElementById('cnl').innerHTML = cidRange;
+    document.getElementById('fcl').innerHTML = fcRange;
+}
+</script>
+
+</body>
+</html>
